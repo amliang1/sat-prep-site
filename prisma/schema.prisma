@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  name            String
+  passwordHash    String
+  role            String           @default("STUDENT")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  sessions        PracticeSession[]
+  answers         PracticeAnswer[]
+  analyticsEvents AnalyticsEvent[]
+  tutorClassrooms Classroom[]      @relation("TutorClassrooms")
+  memberships     ClassroomMember[]
+}
+
+model Question {
+  id                String             @id @default(cuid())
+  externalId        String?            @unique
+  source            String
+  sourceUrl         String?
+  testName          String?
+  section           String
+  domain            String
+  skill             String
+  difficulty        String
+  prompt            String
+  passage           String?
+  choices           QuestionChoice[]
+  explanation       String?
+  correctChoiceId   String?
+  tags              QuestionTag[]
+  answers           PracticeAnswer[]
+  analyticsEvents   AnalyticsEvent[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model QuestionChoice {
+  id         String   @id @default(cuid())
+  questionId String
+  label      String
+  text       String
+  sortOrder  Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Tag {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  createdAt DateTime      @default(now())
+  questions QuestionTag[]
+}
+
+model QuestionTag {
+  questionId String
+  tagId      String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([questionId, tagId])
+}
+
+model PracticeSession {
+  id              String           @id @default(cuid())
+  userId          String
+  section         String?
+  domain          String?
+  difficulty      String?
+  startedAt       DateTime         @default(now())
+  completedAt     DateTime?
+  totalQuestions  Int              @default(0)
+  correctAnswers  Int              @default(0)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers         PracticeAnswer[]
+}
+
+model PracticeAnswer {
+  id              String           @id @default(cuid())
+  sessionId       String
+  userId          String
+  questionId      String
+  selectedChoice  String
+  isCorrect       Boolean
+  responseTimeMs  Int?
+  attemptNumber   Int              @default(1)
+  answeredAt      DateTime         @default(now())
+  session         PracticeSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question        Question         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model AnalyticsEvent {
+  id          String      @id @default(cuid())
+  userId      String?
+  questionId  String?
+  type        String
+  metadata    String?
+  createdAt   DateTime    @default(now())
+  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  question    Question?   @relation(fields: [questionId], references: [id], onDelete: SetNull)
+}
+
+model Classroom {
+  id          String            @id @default(cuid())
+  name        String
+  tutorId     String
+  createdAt   DateTime          @default(now())
+  tutor       User              @relation("TutorClassrooms", fields: [tutorId], references: [id], onDelete: Cascade)
+  members     ClassroomMember[]
+}
+
+model ClassroomMember {
+  classroomId String
+  userId      String
+  role        String            @default("STUDENT")
+  joinedAt    DateTime          @default(now())
+  classroom   Classroom         @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([classroomId, userId])
+}
