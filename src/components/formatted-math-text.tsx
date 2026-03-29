@@ -66,9 +66,9 @@ export function FormattedMathText({
 
         if (line.includes("$")) {
           return (
-            <p key={`line-${index}`} className="formatted-line">
+            <div key={`line-${index}`} className="formatted-line">
               {renderInlineTokens(line, `line-${index}`)}
-            </p>
+            </div>
           );
         }
 
@@ -81,9 +81,9 @@ export function FormattedMathText({
         }
 
         return (
-          <p key={`text-${index}`} className="formatted-line">
+          <div key={`text-${index}`} className="formatted-line">
             {line}
-          </p>
+          </div>
         );
       })}
     </div>
