@@ -8,23 +8,30 @@ datasource db {
 }
 
 model User {
-  id              String           @id @default(cuid())
-  email           String           @unique
-  name            String
-  passwordHash    String
-  role            String           @default("STUDENT")
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  sessions        PracticeSession[]
-  answers         PracticeAnswer[]
-  analyticsEvents AnalyticsEvent[]
-  tutorClassrooms Classroom[]      @relation("TutorClassrooms")
-  memberships     ClassroomMember[]
+  id               String            @id @default(cuid())
+  email            String            @unique
+  name             String
+  passwordHash     String
+  role             String            @default("STUDENT")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  sessions         PracticeSession[]
+  answers          PracticeAnswer[]
+  analyticsEvents  AnalyticsEvent[]
+  tutorClassrooms  Classroom[]       @relation("TutorClassrooms")
+  memberships      ClassroomMember[]
+  targetScore      Int?
+  testDate         DateTime?
+  currentStreak    Int               @default(0)
+  lastStudyDate    DateTime?
+  srsItems         SrsItem[]
+  assignments      Assignment[]
+  mockExamAttempts MockExamAttempt[]
 }
 
 model Question {
-  id                String             @id @default(cuid())
-  externalId        String?            @unique
+  id                String           @id @default(cuid())
+  externalId        String?          @unique
   source            String
   sourceUrl         String?
   testName          String?
@@ -32,16 +39,20 @@ model Question {
   domain            String
   skill             String
   difficulty        String
+  questionType      String           @default("MULTIPLE_CHOICE")
   prompt            String
   passage           String?
   choices           QuestionChoice[]
   explanation       String?
   correctChoiceId   String?
+  correctTextAnswer String?
   tags              QuestionTag[]
   answers           PracticeAnswer[]
   analyticsEvents   AnalyticsEvent[]
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  aiExplanation     String?
+  srsItems          SrsItem[]
 }
 
 model QuestionChoice {
@@ -70,43 +81,44 @@ model QuestionTag {
 }
 
 model PracticeSession {
-  id              String           @id @default(cuid())
-  userId          String
-  section         String?
-  domain          String?
-  difficulty      String?
-  startedAt       DateTime         @default(now())
-  completedAt     DateTime?
-  totalQuestions  Int              @default(0)
-  correctAnswers  Int              @default(0)
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  answers         PracticeAnswer[]
+  id             String           @id @default(cuid())
+  userId         String
+  section        String?
+  domain         String?
+  difficulty     String?
+  startedAt      DateTime         @default(now())
+  completedAt    DateTime?
+  totalQuestions Int              @default(0)
+  correctAnswers Int              @default(0)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers        PracticeAnswer[]
 }
 
 model PracticeAnswer {
-  id              String           @id @default(cuid())
-  sessionId       String
-  userId          String
-  questionId      String
-  selectedChoice  String
-  isCorrect       Boolean
-  responseTimeMs  Int?
-  attemptNumber   Int              @default(1)
-  answeredAt      DateTime         @default(now())
-  session         PracticeSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  question        Question         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  id             String          @id @default(cuid())
+  sessionId      String
+  userId         String
+  questionId     String
+  selectedChoice String?
+  selectedText   String?
+  isCorrect      Boolean
+  responseTimeMs Int?
+  attemptNumber  Int             @default(1)
+  answeredAt     DateTime        @default(now())
+  session        PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question       Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model AnalyticsEvent {
-  id          String      @id @default(cuid())
-  userId      String?
-  questionId  String?
-  type        String
-  metadata    String?
-  createdAt   DateTime    @default(now())
-  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  question    Question?   @relation(fields: [questionId], references: [id], onDelete: SetNull)
+  id         String    @id @default(cuid())
+  userId     String?
+  questionId String?
+  type       String
+  metadata   String?
+  createdAt  DateTime  @default(now())
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: SetNull)
 }
 
 model Classroom {
@@ -116,15 +128,64 @@ model Classroom {
   createdAt   DateTime          @default(now())
   tutor       User              @relation("TutorClassrooms", fields: [tutorId], references: [id], onDelete: Cascade)
   members     ClassroomMember[]
+  assignments Assignment[]
 }
 
 model ClassroomMember {
   classroomId String
   userId      String
-  role        String            @default("STUDENT")
-  joinedAt    DateTime          @default(now())
-  classroom   Classroom         @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        String    @default("STUDENT")
+  joinedAt    DateTime  @default(now())
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([classroomId, userId])
+}
+
+model SrsItem {
+  id             String   @id @default(cuid())
+  userId         String
+  questionId     String
+  nextReviewDate DateTime @default(now())
+  interval       Int      @default(0)
+  easeFactor     Float    @default(2.5)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question       Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+}
+
+model Assignment {
+  id          String    @id @default(cuid())
+  classroomId String
+  tutorId     String
+  name        String
+  description String?
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  classroom   Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  tutor       User      @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+}
+
+model MockExam {
+  id        String            @id @default(cuid())
+  name      String
+  type      String            @default("FULL_LENGTH")
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  attempts  MockExamAttempt[]
+}
+
+model MockExamAttempt {
+  id          String    @id @default(cuid())
+  examId      String
+  userId      String
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  score       Int?
+  exam        MockExam  @relation(fields: [examId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

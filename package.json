@@ -9,16 +9,20 @@
     "lint": "next lint",
     "db:push": "prisma db push",
     "db:seed": "node --import tsx prisma/seed.ts",
-    "ingest:collegeboard": "node --import tsx scripts/import-collegeboard.ts"
+    "ingest:collegeboard": "node --import tsx scripts/import-collegeboard.ts",
+    "import:sat-practice": "node --import tsx scripts/import-local-sat-practice.ts",
+    "normalize:math": "node --import tsx scripts/normalize-imported-math.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
+    "katex": "^0.16.38",
     "lucide-react": "^0.475.0",
     "next": "^15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-katex": "^3.1.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

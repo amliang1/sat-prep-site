@@ -1,0 +1,19 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      # Override these in a .env file or with -e flags
+      DATABASE_URL: "file:/data/prod.db"
+      SESSION_SECRET: "change-me-in-production"
+      GEMINI_API_KEY: ""          # optional – for AI explanations
+    volumes:
+      # Persist the SQLite database across container restarts
+      - sat_data:/data
+    restart: unless-stopped
+
+volumes:
+  sat_data:

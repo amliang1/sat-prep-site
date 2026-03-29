@@ -1,6 +1,6 @@
-# SAT Forge
+# Alan's SAT Prep
 
-SAT Forge is a Next.js SAT prep platform with:
+Alan's SAT Prep is a Next.js SAT prep platform with:
 
 - email/password login
 - question categorization by section, domain, skill, difficulty, and tags
