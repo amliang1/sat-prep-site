@@ -16,6 +16,7 @@ RUN apk add --no-cache libc6-compat openssl
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN mkdir -p public
 
 # Generate Prisma client (uses the schema, doesn't touch the DB)
 RUN npx prisma generate

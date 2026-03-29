@@ -119,24 +119,7 @@ export default async function PracticePage() {
                 <input type="hidden" name="count" value={String(preset.count)} />
                 <button
                   type="submit"
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                    background: "var(--surface-soft)",
-                    border: "1.5px solid var(--border)",
-                    borderRadius: "var(--radius-sm)",
-                    padding: "0.8rem 1rem",
-                    cursor: "pointer",
-                    transition: "border-color 0.15s, background 0.15s",
-                    textAlign: "left",
-                    fontSize: "0.9rem",
-                    fontWeight: 500,
-                    color: "var(--text)"
-                  }}
-                  onMouseOver={(e) => { (e.currentTarget.style.borderColor = "var(--border-strong)"); (e.currentTarget.style.background = "var(--accent-soft)"); }}
-                  onMouseOut={(e) => { (e.currentTarget.style.borderColor = "var(--border)"); (e.currentTarget.style.background = "var(--surface-soft)"); }}
+                  className="quick-start-card"
                 >
                   <span>{preset.emoji}</span>
                   <div>
