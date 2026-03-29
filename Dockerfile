@@ -21,6 +21,11 @@ RUN mkdir -p public
 # Generate Prisma client (uses the schema, doesn't touch the DB)
 RUN npx prisma generate
 
+# Build a seeded SQLite database inside the image so deployment does not rely
+# on a local untracked prisma/dev.db file being present in the build context.
+RUN DATABASE_URL="file:/app/prisma/dev.db" npx prisma db push --skip-generate
+RUN DATABASE_URL="file:/app/prisma/dev.db" npm run db:seed
+
 # Build the Next.js app (produces .next/standalone)
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV DATABASE_URL="file:/data/prod.db"
