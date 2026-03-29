@@ -40,18 +40,16 @@ ENV DATABASE_URL="file:/data/prod.db"
 # Create a non-root user
 RUN addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 nextjs
+RUN mkdir -p /data \
+ && chown -R nextjs:nodejs /data
 
 # Copy the standalone Next.js server output
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Copy Prisma schema + migrations so db push can run at startup
+# Copy Prisma directory so the runtime image includes the seed database
 COPY --from=builder /app/prisma ./prisma
-# Copy node_modules for Prisma CLI + tsx (needed by entrypoint)
-COPY --from=builder /app/node_modules ./node_modules
-# Copy seed script
-COPY --from=builder /app/prisma/seed.ts ./prisma/seed.ts
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
