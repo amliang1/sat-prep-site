@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { FormattedMathText } from "@/components/formatted-math-text";
+import { CheckCircle2, Timer, Menu, ArrowLeft, ArrowRight, Flag, X, Square, RotateCcw, CircleSlash } from "lucide-react";
 
 type Choice = { id: string; label: string; text: string };
 type Question = {
@@ -104,7 +105,9 @@ export default function BluebookExamClient({ attemptId, questions, module: modul
       <div className="bluebook-shell">
         <div className="bluebook-content" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
           <div className="panel" style={{ textAlign: "center", padding: "3rem" }}>
-            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>✅</div>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
+              <CheckCircle2 size={64} color="var(--green)" />
+            </div>
             <h2>Module {moduleNum} submitted!</h2>
             <p className="muted">Calculating your score…</p>
           </div>
@@ -123,8 +126,9 @@ export default function BluebookExamClient({ attemptId, questions, module: modul
           </span>
         </div>
         <div className="bluebook-header-center">
-          <div className={`bluebook-timer ${timerWarning ? "timer-warning" : ""}`}>
-            ⏱ {formatTime(timeLeft)}
+          <div className={`bluebook-timer ${timerWarning ? "timer-warning" : ""}`} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Timer size={18} />
+            {formatTime(timeLeft)}
           </div>
         </div>
         <div className="bluebook-header-right">
@@ -133,8 +137,10 @@ export default function BluebookExamClient({ attemptId, questions, module: modul
             className="bluebook-nav-toggle"
             onClick={() => setShowNav(true)}
             title="Question navigator"
+            style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
           >
-            ☰ Questions
+            <Menu size={18} />
+            Questions
           </button>
         </div>
       </header>
@@ -189,15 +195,18 @@ export default function BluebookExamClient({ attemptId, questions, module: modul
           className="bluebook-btn"
           disabled={currentIndex === 0}
           onClick={() => setCurrentIndex((i) => i - 1)}
+          style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
         >
-          ← Back
+          <ArrowLeft size={18} />
+          Back
         </button>
         <span className="muted" style={{ fontSize: "0.85rem" }}>
           {answeredCount} of {questions.length} answered
         </span>
         {currentIndex < questions.length - 1 ? (
-          <button className="bluebook-btn primary" onClick={() => setCurrentIndex((i) => i + 1)}>
-            Next →
+          <button className="bluebook-btn primary" onClick={() => setCurrentIndex((i) => i + 1)} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            Next
+            <ArrowRight size={18} />
           </button>
         ) : (
           <button
@@ -216,7 +225,9 @@ export default function BluebookExamClient({ attemptId, questions, module: modul
           <div className="bluebook-nav-modal" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
               <h3 style={{ margin: 0 }}>Question navigator</h3>
-              <button className="bluebook-btn" onClick={() => setShowNav(false)}>✕</button>
+              <button className="bluebook-btn" onClick={() => setShowNav(false)} style={{ padding: "4px" }}>
+                <X size={20} />
+              </button>
             </div>
             <div className="bluebook-nav-grid">
               {questions.map((q, i) => {
@@ -230,15 +241,21 @@ export default function BluebookExamClient({ attemptId, questions, module: modul
                     onClick={() => { setCurrentIndex(i); setShowNav(false); }}
                     title={`Q${i + 1}${isFlagged ? " (flagged)" : ""}${isAnswered ? " (answered)" : ""}`}
                   >
-                    {isFlagged ? "🚩" : i + 1}
+                    {isFlagged ? <Flag size={14} fill="currentColor" /> : i + 1}
                   </button>
                 );
               })}
             </div>
-            <div style={{ marginTop: "1rem", display: "flex", gap: "1rem", fontSize: "0.8rem" }} className="muted">
-              <span>🟦 Answered</span>
-              <span>⬜ Unanswered</span>
-              <span>🚩 Flagged</span>
+            <div style={{ marginTop: "1rem", display: "flex", gap: "1rem", fontSize: "0.8rem", alignItems: "center" }} className="muted">
+              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                <Square size={12} fill="var(--blue-light)" color="var(--blue-light)" /> Answered
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                <Square size={12} /> Unanswered
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                <Flag size={12} fill="var(--red)" color="var(--red)" /> Flagged
+              </span>
             </div>
           </div>
         </div>
@@ -282,8 +299,10 @@ function QuestionContent({
           className={`bluebook-flag-btn ${flagged ? "active" : ""}`}
           onClick={onFlag}
           title="Flag for review"
+          style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
         >
-          {flagged ? "🚩 Flagged" : "⚑ Flag"}
+          <Flag size={16} fill={flagged ? "currentColor" : "none"} />
+          {flagged ? "Flagged" : "Flag"}
         </button>
       </div>
 
@@ -321,8 +340,9 @@ function QuestionContent({
                     className="strike-btn"
                     title="Eliminate this choice"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onStrike(choice.id); }}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
                   >
-                    {isStruck ? "↩" : "⊘"}
+                    {isStruck ? <RotateCcw size={14} /> : <CircleSlash size={14} />}
                   </button>
                 </label>
               </div>

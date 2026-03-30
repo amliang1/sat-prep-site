@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { getQuestionFilters } from "@/lib/questions";
 import { prisma } from "@/lib/prisma";
 import { getDueSrsItems } from "@/lib/srs";
+import { FileText, Library, ArrowRight, Baseline, Triangle, Circle, Check } from "lucide-react";
 
 function formatSectionLabel(section: string | null) {
   if (section === "READING_WRITING") return "Reading & Writing";
@@ -38,27 +39,29 @@ export default async function PracticePage() {
             Build a focused set, or take a full Bluebook-style mock exam.
           </p>
         </div>
-        <Link href="/exam/new" className="button">
-          📝 Mock exam
+        <Link href="/exam/new" className="button" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+          <FileText size={18} />
+          Mock exam
         </Link>
       </div>
 
-      {/* Review bin nudge */}
-      {dueCount > 0 && (
         <div className="panel review-bin-cta" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
-          <div>
-            <strong>📚 Review Bin — {dueCount} question{dueCount !== 1 ? "s" : ""} due</strong>
-            <p className="muted text-sm" style={{ margin: "0.2rem 0 0" }}>
-              Spaced repetition: hit these before starting fresh practice.
-            </p>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <Library size={24} style={{ color: "var(--amber)" }} />
+            <div>
+              <strong>Review Bin — {dueCount} question{dueCount !== 1 ? "s" : ""} due</strong>
+              <p className="muted text-sm" style={{ margin: "0.2rem 0 0" }}>
+                Spaced repetition: hit these before starting fresh practice.
+              </p>
+            </div>
           </div>
           <form action="/api/practice/srs-session" method="post">
-            <button className="button" type="submit" style={{ background: "var(--amber)", border: "none" }}>
-              Start review →
+            <button className="button" type="submit" style={{ background: "var(--amber)", border: "none", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+              Start review
+              <ArrowRight size={16} />
             </button>
           </form>
         </div>
-      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.1fr) minmax(0,0.9fr)", gap: "1.25rem", alignItems: "start" }}>
 
@@ -97,8 +100,9 @@ export default async function PracticePage() {
               <span>Question count</span>
               <input defaultValue="5" max="20" min="1" name="count" type="number" />
             </label>
-            <button className="button" type="submit" style={{ marginTop: "0.25rem" }}>
-              Start session →
+            <button className="button" type="submit" style={{ marginTop: "0.25rem", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+              Start session
+              <ArrowRight size={16} />
             </button>
           </form>
         </section>
@@ -108,10 +112,10 @@ export default async function PracticePage() {
           <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>Quick start</h2>
           <div style={{ display: "grid", gap: "0.65rem" }}>
             {[
-              { emoji: "🔤", label: "Reading & Writing", section: "READING_WRITING", difficulty: "ALL", count: 10 },
-              { emoji: "📐", label: "Math — Mixed", section: "MATH", difficulty: "ALL", count: 10 },
-              { emoji: "🔴", label: "Hard questions only", section: "READING_WRITING", difficulty: "HARD", count: 8 },
-              { emoji: "🟢", label: "Confidence builder", section: "READING_WRITING", difficulty: "EASY", count: 10 }
+              { icon: <Baseline size={18} />, label: "Reading & Writing", section: "READING_WRITING", difficulty: "ALL", count: 10 },
+              { icon: <Triangle size={18} />, label: "Math — Mixed", section: "MATH", difficulty: "ALL", count: 10 },
+              { icon: <Circle size={18} fill="var(--red)" color="var(--red)" />, label: "Hard questions only", section: "READING_WRITING", difficulty: "HARD", count: 8 },
+              { icon: <Circle size={18} fill="var(--green)" color="var(--green)" />, label: "Confidence builder", section: "READING_WRITING", difficulty: "EASY", count: 10 }
             ].map((preset) => (
               <form key={preset.label} action="/api/practice/start" method="post">
                 <input type="hidden" name="section" value={preset.section} />
@@ -121,7 +125,7 @@ export default async function PracticePage() {
                   type="submit"
                   className="quick-start-card"
                 >
-                  <span>{preset.emoji}</span>
+                  <span style={{ display: "flex", alignItems: "center" }}>{preset.icon}</span>
                   <div>
                     <div>{preset.label}</div>
                     <div className="muted text-xs">{preset.count} questions</div>
@@ -164,7 +168,10 @@ export default async function PracticePage() {
                     <div className="bar-fill" style={{ width: `${pct}%`, background: difficultyColor(pct) }} />
                   </div>
                   {session.completedAt ? (
-                    <span className="badge badge-easy" style={{ marginTop: "0.5rem", fontSize: "0.68rem" }}>✓ Complete</span>
+                    <span className="badge badge-easy" style={{ marginTop: "0.5rem", fontSize: "0.68rem", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                      <Check size={12} />
+                      Complete
+                    </span>
                   ) : (
                     <span className="badge badge-medium" style={{ marginTop: "0.5rem", fontSize: "0.68rem" }}>In progress</span>
                   )}

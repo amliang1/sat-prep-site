@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { FormattedMathText } from "@/components/formatted-math-text";
+import { Check, X, ArrowLeft } from "lucide-react";
 
 type Props = {
   params: Promise<{ attemptId: string }>;
@@ -74,8 +75,9 @@ export default async function ExamReviewPage({ params, searchParams }: Props) {
           </p>
         </div>
         <div style={{ display: "flex", gap: "0.6rem" }}>
-          <Link href={`/exam/${attemptId}/results?module=${moduleStr}&section=${section}`} className="button ghost">
-            ← Results
+          <Link href={`/exam/${attemptId}/results?module=${moduleStr}&section=${section}`} className="button ghost" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+            <ArrowLeft size={16} />
+            Results
           </Link>
           <Link href="/practice" className="button">Practice weak areas</Link>
         </div>
@@ -118,10 +120,14 @@ export default async function ExamReviewPage({ params, searchParams }: Props) {
                     fontSize: "0.78rem",
                     color: detail.isCorrect ? "var(--green)" : "var(--red)",
                     textTransform: "uppercase",
-                    letterSpacing: "0.05em"
+                    letterSpacing: "0.05em",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.25rem"
                   }}
                 >
-                  {detail.isCorrect ? "✓ Correct" : "✗ Incorrect"}
+                  {detail.isCorrect ? <Check size={14} /> : <X size={14} />}
+                  {detail.isCorrect ? "Correct" : "Incorrect"}
                 </span>
                 <span className="muted text-xs">Q{idx + 1}</span>
                 <span className="question-chip">{q.domain}</span>

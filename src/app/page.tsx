@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { GraduationCap, FileText, Library, BarChart3, Target, Sparkles, ArrowRight } from "lucide-react";
 
 export default async function HomePage() {
   const [questionCount, sessionCount, userCount, user] = await Promise.all([
@@ -12,32 +13,32 @@ export default async function HomePage() {
 
   const features = [
     {
-      icon: "📝",
+      icon: <FileText size={20} />,
       title: "Bluebook Exam Mode",
       desc: "Full-length adaptive mock exams that mirror the real digital SAT — timer, flagging, answer elimination, and Module 2 routing."
     },
     {
-      icon: "📚",
+      icon: <Library size={20} />,
       title: "Spaced Repetition",
       desc: "Questions you miss are added to a smart review bin powered by the SM-2 algorithm. Your Review Bin resurfaces them at the perfect interval."
     },
     {
-      icon: "📊",
+      icon: <BarChart3 size={20} />,
       title: "Deep Analytics",
       desc: "Skill mastery bars, weak-area detection, first-try vs. repeat accuracy, time-per-skill breakdowns, and score forecasting."
     },
     {
-      icon: "🎯",
+      icon: <Target size={20} />,
       title: "Goal Tracking",
       desc: "Set your target SAT score and test date. See a live countdown and track your daily study streak."
     },
     {
-      icon: "👩‍🏫",
+      icon: <GraduationCap size={20} />,
       title: "Tutor Dashboards",
       desc: "Tutors get classroom overviews, per-student drill-downs by domain and skill, and can create assignments with due dates."
     },
     {
-      icon: "✨",
+      icon: <Sparkles size={20} />,
       title: "AI Explanations",
       desc: "Admins can generate expert step-by-step explanations for any question with one click, powered by Gemini."
     }
@@ -48,7 +49,10 @@ export default async function HomePage() {
 
       {/* ── Hero ── */}
       <section className="hero-card animate-fade-up">
-        <span className="hero-badge">🎓 Official-style SAT practice</span>
+        <span className="hero-badge">
+          <GraduationCap size={14} style={{ marginRight: "0.4rem" }} />
+          Official-style SAT practice
+        </span>
         <h1 className="hero-title">
           Score higher.
           <br />
@@ -126,9 +130,17 @@ export default async function HomePage() {
         <Link
           className="button"
           href={user ? "/practice" : "/register"}
-          style={{ background: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.3)", color: "#fff" }}
+          style={{ 
+            background: "rgba(255,255,255,0.12)", 
+            borderColor: "rgba(255,255,255,0.3)", 
+            color: "#fff",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.5rem"
+          }}
         >
-          {user ? "Start a session →" : "Create your account →"}
+          {user ? "Start a session" : "Create your account"}
+          <ArrowRight size={16} />
         </Link>
       </section>
     </div>

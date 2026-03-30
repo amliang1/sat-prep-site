@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import { Check, X, ArrowLeft } from "lucide-react";
 
 type Props = { params: Promise<{ studentId: string }> };
 
@@ -72,7 +73,10 @@ export default async function StudentDrilldownPage({ params }: Props) {
     <div className="card-grid">
       <div>
         <p className="muted" style={{ margin: "0 0 0.25rem" }}>
-          <Link href="/tutor">← Tutor dashboard</Link>
+          <Link href="/tutor" style={{ display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+            <ArrowLeft size={16} />
+            Tutor dashboard
+          </Link>
         </p>
         <h1 style={{ margin: 0 }}>{student.name}</h1>
         <p className="muted" style={{ marginTop: "0.25rem" }}>{student.email}</p>
@@ -167,8 +171,13 @@ export default async function StudentDrilldownPage({ params }: Props) {
               <p style={{ margin: "0.3rem 0 0", fontSize: "0.85rem", color: "var(--text-light)" }}>
                 {a.question.prompt.slice(0, 100)}{a.question.prompt.length > 100 ? "…" : ""}
               </p>
-              <p className="muted" style={{ margin: "0.3rem 0 0", fontSize: "0.75rem" }}>
-                {a.isCorrect ? "✓ Correct" : "✗ Incorrect"} · {a.answeredAt.toLocaleDateString()}
+              <p className="muted" style={{ margin: "0.3rem 0 0", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                {a.isCorrect ? (
+                  <span style={{ color: "#22c55e", display: "flex", alignItems: "center", gap: "0.25rem" }}><Check size={12} /> Correct</span>
+                ) : (
+                  <span style={{ color: "#ef4444", display: "flex", alignItems: "center", gap: "0.25rem" }}><X size={12} /> Incorrect</span>
+                )}
+                · {a.answeredAt.toLocaleDateString()}
               </p>
             </div>
           ))}

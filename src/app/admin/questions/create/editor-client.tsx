@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { InlineMath, BlockMath } from "react-katex";
+import { CheckCircle2, Sparkles, Check } from "lucide-react";
 
 type Choice = { label: string; text: string };
 
@@ -76,8 +77,9 @@ export default function QuestionEditorClient({
   return (
     <div className="card-grid" style={{ maxWidth: "860px", margin: "0 auto" }}>
       {successId && (
-        <div className="panel" style={{ background: "rgba(34,197,94,0.1)", borderColor: "#22c55e" }}>
-          ✅ Question created successfully! ID: <code>{successId}</code>
+        <div className="panel" style={{ background: "rgba(34,197,94,0.1)", borderColor: "#22c55e", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <CheckCircle2 size={20} color="#22c55e" />
+          <span>Question created successfully! ID: <code>{successId}</code></span>
         </div>
       )}
 
@@ -197,11 +199,12 @@ export default function QuestionEditorClient({
             <button
               type="button"
               className="button secondary"
-              style={{ fontSize: "0.85rem", padding: "8px 18px" }}
+              style={{ fontSize: "0.85rem", padding: "8px 18px", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
               onClick={generateExplanation}
               disabled={generating || !prompt}
             >
-              {generating ? "Generating…" : "✨ AI-generate explanation"}
+              <Sparkles size={16} />
+              {generating ? "Generating…" : "AI-generate explanation"}
             </button>
           </div>
 
@@ -228,7 +231,7 @@ export default function QuestionEditorClient({
                   <strong>{c.label}.</strong>{" "}
                   <KatexPreview text={c.text || `Choice ${c.label}`} />
                   {c.label === correctChoice && (
-                    <span style={{ marginLeft: "0.5rem", color: "#22c55e", fontSize: "0.8rem" }}>✓</span>
+                    <Check size={14} color="#22c55e" style={{ marginLeft: "0.5rem" }} />
                   )}
                 </div>
               ))}
