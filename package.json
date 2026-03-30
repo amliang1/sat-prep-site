@@ -11,6 +11,7 @@
     "db:seed": "node --import tsx prisma/seed.ts",
     "ingest:collegeboard": "node --import tsx scripts/import-collegeboard.ts",
     "import:sat-practice": "node --import tsx scripts/import-local-sat-practice.ts",
+    "import:sat-practice:ai": "node --import tsx scripts/import-local-sat-practice.ts --ai",
     "normalize:math": "node --import tsx scripts/normalize-imported-math.ts"
   },
   "dependencies": {

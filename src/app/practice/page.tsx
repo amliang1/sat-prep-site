@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { getQuestionFilters } from "@/lib/questions";
 import { prisma } from "@/lib/prisma";
 import { getDueSrsItems } from "@/lib/srs";
+import { getDashboardAnalytics } from "@/lib/dashboard";
 import { FileText, Library, ArrowRight, Baseline, Triangle, Circle, Check } from "lucide-react";
 
 function formatSectionLabel(section: string | null) {
@@ -19,15 +20,17 @@ function difficultyColor(pct: number) {
 
 export default async function PracticePage() {
   const user = await requireUser();
-  const [{ domains }, recentSessions, dueCount] = await Promise.all([
+  const [{ domains }, recentSessions, dueCount, analytics] = await Promise.all([
     getQuestionFilters(),
     prisma.practiceSession.findMany({
       where: { userId: user.id },
       orderBy: { startedAt: "desc" },
       take: 6
     }),
-    getDueSrsItems(user.id).then((items) => items.length)
+    getDueSrsItems(user.id).then((items) => items.length),
+    getDashboardAnalytics(user.id, user.role)
   ]);
+  const weakestSkill = analytics.weakAreas[0];
 
   return (
     <div className="card-grid" style={{ gap: "1.5rem" }}>
@@ -136,6 +139,27 @@ export default async function PracticePage() {
           </div>
         </section>
       </div>
+
+      {weakestSkill && (
+        <section className="panel">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+            <div>
+              <h2 style={{ marginTop: 0, marginBottom: "0.35rem" }}>Smart start</h2>
+              <p className="muted text-sm" style={{ margin: 0 }}>
+                Your weakest tracked skill right now is <strong style={{ color: "var(--text)" }}>{weakestSkill.skill}</strong> at {weakestSkill.accuracy}%.
+              </p>
+            </div>
+            <form action="/api/practice/targeted-session" method="post">
+              <input type="hidden" name="skill" value={weakestSkill.skill} />
+              <input type="hidden" name="count" value="6" />
+              <input type="hidden" name="label" value={`Smart start: ${weakestSkill.skill}`} />
+              <button className="button" type="submit">
+                Drill weakest skill
+              </button>
+            </form>
+          </div>
+        </section>
+      )}
 
       {/* ── Recent sessions ── */}
       {recentSessions.length > 0 && (

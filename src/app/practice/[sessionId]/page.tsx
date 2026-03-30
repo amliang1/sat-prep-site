@@ -5,9 +5,11 @@ import { PracticeQuestionForm } from "@/components/practice-question-form";
 import { requireUser } from "@/lib/auth";
 import { formatSection } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
+import { getSessionQuestionSet } from "@/lib/session-questions";
 
 type PracticeSessionPageProps = {
   params: Promise<{ sessionId: string }>;
+  searchParams: Promise<{ ids?: string }>;
 };
 
 const DIFFICULTY_CLASS: Record<string, string> = {
@@ -16,9 +18,10 @@ const DIFFICULTY_CLASS: Record<string, string> = {
   HARD: "badge badge-hard"
 };
 
-export default async function PracticeSessionPage({ params }: PracticeSessionPageProps) {
+export default async function PracticeSessionPage({ params, searchParams }: PracticeSessionPageProps) {
   const user = await requireUser();
   const { sessionId } = await params;
+  const resolvedSearchParams = await searchParams;
 
   const session = await prisma.practiceSession.findFirst({
     where: { id: sessionId, userId: user.id },
@@ -30,16 +33,30 @@ export default async function PracticeSessionPage({ params }: PracticeSessionPag
   const answeredCount = session.answers.length;
   const total = session.totalQuestions;
   const pct = total > 0 ? Math.round((session.correctAnswers / total) * 100) : 0;
+  const fixedQuestionIdsFromQuery = resolvedSearchParams.ids
+    ?.split(",")
+    .map((id) => id.trim())
+    .filter(Boolean) ?? [];
+  const fixedQuestionSet = fixedQuestionIdsFromQuery.length
+    ? fixedQuestionIdsFromQuery
+    : (await getSessionQuestionSet(session.id, user.id))?.questionIds ?? [];
+  const answeredQuestionIds = new Set(session.answers.map((answer) => answer.questionId));
+  const remainingFixedQuestionIds = fixedQuestionSet.filter((id) => !answeredQuestionIds.has(id));
 
-  const nextQuestion = await prisma.question.findFirst({
-    where: {
-      section: session.section ?? undefined,
-      domain: session.domain ?? undefined,
-      difficulty: session.difficulty ?? undefined,
-      answers: { none: { sessionId: session.id } }
-    },
-    include: { choices: { orderBy: { sortOrder: "asc" } } }
-  });
+  const nextQuestion = remainingFixedQuestionIds.length
+    ? await prisma.question.findUnique({
+        where: { id: remainingFixedQuestionIds[0] },
+        include: { choices: { orderBy: { sortOrder: "asc" } } }
+      })
+    : await prisma.question.findFirst({
+        where: {
+          section: session.section ?? undefined,
+          domain: session.domain ?? undefined,
+          difficulty: session.difficulty ?? undefined,
+          answers: { none: { sessionId: session.id } }
+        },
+        include: { choices: { orderBy: { sortOrder: "asc" } } }
+      });
 
   /* ── Session complete screen ── */
   if (!nextQuestion || session.completedAt) {

@@ -135,6 +135,26 @@ export async function getDashboardAnalytics(userId: string, role: string) {
     };
   });
 
+  const sectionStats = answers.reduce<Record<string, { correct: number; total: number }>>((acc, answer) => {
+    const key = answer.question.section;
+    const current = acc[key] ?? { correct: 0, total: 0 };
+    current.total += 1;
+    if (answer.isCorrect) {
+      current.correct += 1;
+    }
+    acc[key] = current;
+    return acc;
+  }, {});
+
+  const sectionAccuracy = ["READING_WRITING", "MATH"].map((section) => {
+    const stat = sectionStats[section] ?? { correct: 0, total: 0 };
+    return {
+      section,
+      accuracy: percentage(stat.correct, stat.total),
+      attempts: stat.total
+    };
+  });
+
   const attemptsByQuestion = answers.reduce<Record<string, typeof answers>>((acc, answer) => {
     const current = acc[answer.questionId] ?? [];
     current.push(answer);
@@ -239,6 +259,7 @@ export async function getDashboardAnalytics(userId: string, role: string) {
     totalAttempts: answers.length,
     skillMastery,
     weakAreas,
+    sectionAccuracy,
     accuracyByDifficulty,
     firstTryAccuracy: percentage(firstTryCorrect, firstTryTotal),
     repeatAccuracy: percentage(repeatCorrect, repeatTotal),

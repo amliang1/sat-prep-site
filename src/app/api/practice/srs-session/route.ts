@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { getDueSrsItems } from "@/lib/srs";
 import { prisma } from "@/lib/prisma";
+import { saveSessionQuestionSet } from "@/lib/session-questions";
 
 /**
  * POST /api/practice/srs-session
@@ -28,16 +29,13 @@ export async function POST(request: Request) {
     }
   });
 
-  // Pre-attach only the specific questions (by limiting what 'none' filter matches)
-  // We store the question ids on the session via tags hack not available –
-  // instead we use a metadata AnalyticsEvent to track it.
-  await prisma.analyticsEvent.create({
-    data: {
-      userId: user.id,
-      type: "SRS_SESSION",
-      metadata: JSON.stringify({ sessionId: session.id, questionIds })
-    }
+  await saveSessionQuestionSet({
+    userId: user.id,
+    sessionId: session.id,
+    questionIds,
+    source: "SRS",
+    label: "Review Bin"
   });
 
-  return NextResponse.redirect(new URL(`/practice/${session.id}?srs=1&ids=${questionIds.join(",")}`, request.url));
+  return NextResponse.redirect(new URL(`/practice/${session.id}?srs=1`, request.url));
 }

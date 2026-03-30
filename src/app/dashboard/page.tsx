@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getDueSrsItems } from "@/lib/srs";
 import { ScoreChart } from "@/components/score-chart";
 import Link from "next/link";
+import { formatSection } from "@/lib/utils";
 
 function daysUntil(date: Date | null): number | null {
   if (!date) return null;
@@ -27,6 +28,10 @@ function heatmapBg(accuracy: number): string {
   return "var(--red-soft)";
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
 export default async function DashboardPage() {
   const user = await requireUser();
   const [analytics, fullUser, dueSrsItems, examAttempts] = await Promise.all([
@@ -45,6 +50,20 @@ export default async function DashboardPage() {
   ]);
 
   const testDaysRemaining = daysUntil(fullUser?.testDate ?? null);
+  const latestExamScore = examAttempts.at(-1)?.score ?? null;
+  const estimatedCurrentScore =
+    latestExamScore ?? Math.round((400 + (analytics.overallAccuracy / 100) * 1200) / 10) * 10;
+  const targetScore = fullUser?.targetScore ?? null;
+  const scoreGap = targetScore ? Math.max(0, targetScore - estimatedCurrentScore) : null;
+  const urgencyBoost = testDaysRemaining === null ? 0 : testDaysRemaining <= 30 ? 2 : testDaysRemaining <= 60 ? 1 : 0;
+  const gapBoost = scoreGap === null ? 0 : scoreGap >= 150 ? 2 : scoreGap >= 70 ? 1 : 0;
+  const sessionsPerWeek = clamp(3 + urgencyBoost + gapBoost, 2, 7);
+  const weakerSection = [...analytics.sectionAccuracy]
+    .sort((a, b) => a.accuracy - b.accuracy || b.attempts - a.attempts)[0];
+  const primaryFocus = analytics.weakAreas.slice(0, 3);
+  const planHeadline = targetScore && testDaysRemaining !== null
+    ? `${sessionsPerWeek} focused sessions/week to stay on pace for ${targetScore}`
+    : `${sessionsPerWeek} focused sessions/week to build steady momentum`;
 
   const chartPoints = examAttempts
     .filter((a) => a.score !== null && a.completedAt !== null)
@@ -146,6 +165,74 @@ export default async function DashboardPage() {
         </section>
       </div>
 
+      {/* ── Study plan ── */}
+      <section className="panel">
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: "1rem" }}>Study plan</h2>
+            <p className="muted text-sm" style={{ margin: "0.3rem 0 0" }}>
+              {planHeadline}
+            </p>
+          </div>
+          <span className="badge" style={{ fontSize: "0.75rem" }}>
+            Baseline {estimatedCurrentScore}{latestExamScore ? " from latest mock exam" : " estimated from practice history"}
+          </span>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem", marginBottom: "1rem" }}>
+          <div className="stat">
+            <div className="stat-label">Recommended pace</div>
+            <div style={{ fontSize: "1.6rem", fontWeight: 800 }}>{sessionsPerWeek}/week</div>
+          </div>
+          <div className="stat">
+            <div className="stat-label">Priority section</div>
+            <div style={{ fontSize: "1.05rem", fontWeight: 800 }}>
+              {weakerSection ? formatSection(weakerSection.section) : "Build a baseline"}
+            </div>
+            {weakerSection && <div className="muted text-xs">{weakerSection.accuracy}% accuracy</div>}
+          </div>
+          <div className="stat">
+            <div className="stat-label">Score gap</div>
+            <div style={{ fontSize: "1.6rem", fontWeight: 800 }}>
+              {scoreGap === null ? "Set goal" : scoreGap}
+            </div>
+            <div className="muted text-xs">
+              {targetScore ? `Target ${targetScore}` : "Add a target score for sharper pacing"}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gap: "0.75rem" }}>
+          <div className="stat">
+            <strong style={{ fontSize: "0.9rem" }}>This week</strong>
+            <p className="muted text-sm" style={{ margin: "0.35rem 0 0" }}>
+              Do {Math.max(1, Math.ceil(sessionsPerWeek / 2))} targeted skill drill{Math.max(1, Math.ceil(sessionsPerWeek / 2)) !== 1 ? "s" : ""}, {Math.max(1, sessionsPerWeek - Math.ceil(sessionsPerWeek / 2))} mixed session{Math.max(1, sessionsPerWeek - Math.ceil(sessionsPerWeek / 2)) !== 1 ? "s" : ""}, and 1 Review Bin pass.
+            </p>
+          </div>
+          <div className="stat">
+            <strong style={{ fontSize: "0.9rem" }}>Focus skills</strong>
+            {primaryFocus.length ? (
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
+                {primaryFocus.map((area) => (
+                  <form key={area.skill} action="/api/practice/targeted-session" method="post">
+                    <input type="hidden" name="skill" value={area.skill} />
+                    <input type="hidden" name="count" value="6" />
+                    <input type="hidden" name="label" value={`Focused drill: ${area.skill}`} />
+                    <button className="button secondary" type="submit" style={{ fontSize: "0.78rem", padding: "0.55rem 0.8rem" }}>
+                      {area.skill} · {area.accuracy}%
+                    </button>
+                  </form>
+                ))}
+              </div>
+            ) : (
+              <p className="muted text-sm" style={{ margin: "0.35rem 0 0" }}>
+                Complete a few sessions to generate personalized skill drills.
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* ── Skill heatmap ── */}
       <section className="panel">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
@@ -200,6 +287,14 @@ export default async function DashboardPage() {
                   <div className="bar-track">
                     <div className="bar-fill" style={{ width: `${area.accuracy}%`, background: heatmapColor(area.accuracy) }} />
                   </div>
+                  <form action="/api/practice/targeted-session" method="post" style={{ marginTop: "0.5rem" }}>
+                    <input type="hidden" name="skill" value={area.skill} />
+                    <input type="hidden" name="count" value="6" />
+                    <input type="hidden" name="label" value={`Focused drill: ${area.skill}`} />
+                    <button className="button secondary" type="submit" style={{ fontSize: "0.75rem", padding: "0.45rem 0.7rem" }}>
+                      Drill this skill
+                    </button>
+                  </form>
                 </div>
               ))}
             </div>

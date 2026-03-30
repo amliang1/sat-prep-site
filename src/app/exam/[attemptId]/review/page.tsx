@@ -58,6 +58,12 @@ export default async function ExamReviewPage({ params, searchParams }: Props) {
 
   const questionMap = Object.fromEntries(questions.map((q) => [q.id, q]));
   const accuracy = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+  const missedSkills = answersDetail
+    .filter((detail) => !detail.isCorrect)
+    .map((detail) => questionMap[detail.questionId]?.skill)
+    .filter((skill): skill is string => Boolean(skill))
+    .filter((skill, index, values) => values.indexOf(skill) === index)
+    .slice(0, 3);
 
   const sectionLabel = section === "READING_WRITING" ? "Reading & Writing" : "Math";
 
@@ -247,6 +253,28 @@ export default async function ExamReviewPage({ params, searchParams }: Props) {
         <Link href="/exam/new" className="button secondary">Take another exam</Link>
         <Link href="/dashboard" className="button ghost">Dashboard</Link>
       </div>
+
+      {missedSkills.length > 0 && (
+        <section className="panel" style={{ marginTop: "1rem" }}>
+          <h2 style={{ marginTop: 0, fontSize: "1rem" }}>Retry similar questions</h2>
+          <p className="muted text-sm" style={{ marginTop: "0.35rem" }}>
+            Start a focused drill from the skills you missed in this module.
+          </p>
+          <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", marginTop: "0.85rem" }}>
+            {missedSkills.map((skill) => (
+              <form key={skill} action="/api/practice/targeted-session" method="post">
+                <input type="hidden" name="section" value={section} />
+                <input type="hidden" name="skill" value={skill} />
+                <input type="hidden" name="count" value="6" />
+                <input type="hidden" name="label" value={`Retry drill: ${skill}`} />
+                <button className="button secondary" type="submit">
+                  {skill}
+                </button>
+              </form>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -116,7 +116,9 @@ The app will be available at [http://localhost:3000](http://localhost:3000).
 |---|---|---|
 | `DATABASE_URL` | ✅ | SQLite file path. Example: `file:./prisma/dev.db` |
 | `SESSION_SECRET` | ✅ | A long, random string used to sign session cookies. Change this before deploying. |
-| `GEMINI_API_KEY` | ⬜ | Google Gemini API key. Required only for the AI explanation feature in the admin panel. |
+| `GEMINI_API_KEY` | ⬜ | Google Gemini API key. Optional fallback for AI explanation/import features. |
+| `OPENROUTER_API_KEY` | ⬜ | OpenRouter API key. Preferred for AI SAT PDF parsing. |
+| `OPENROUTER_MODEL` | ⬜ | OpenRouter model id for AI parsing. Default: `google/gemini-3.1-pro-preview`. |
 
 ---
 

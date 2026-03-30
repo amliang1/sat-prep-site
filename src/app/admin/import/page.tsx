@@ -25,6 +25,25 @@ export default async function AdminImportPage() {
           </button>
         </form>
       </section>
+
+      <section className="panel">
+        <p className="muted">Admin ingestion</p>
+        <h1 style={{ marginTop: "0.5rem" }}>Import local SAT practice PDFs with AI parsing</h1>
+        <p className="muted">
+          This scans every practice test PDF in <code>sat-practice/</code>, extracts each module, asks Gemini to
+          structure the questions, and imports them into the database with answer keys merged afterward.
+        </p>
+        <p className="muted">
+          Requirements: <code>OPENROUTER_API_KEY</code> or <code>GEMINI_API_KEY</code> must be set, and the local
+          Python environment must have <code>pypdf</code> available for text extraction.
+        </p>
+        <form className="form-grid" action="/api/admin/import" method="post" style={{ maxWidth: "24rem" }}>
+          <input type="hidden" name="mode" value="local-ai" />
+          <button className="button" type="submit">
+            Run AI PDF importer
+          </button>
+        </form>
+      </section>
     </div>
   );
 }

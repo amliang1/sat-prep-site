@@ -6,6 +6,7 @@ export type QuestionFilters = {
   section?: Section | "ALL";
   domain?: string;
   difficulty?: Difficulty | "ALL";
+  skill?: string;
   tag?: string;
   search?: string;
 };
@@ -38,6 +39,10 @@ export function buildQuestionWhere(filters: QuestionFilters): Prisma.QuestionWhe
 
   if (filters.domain) {
     where.domain = filters.domain;
+  }
+
+  if (filters.skill) {
+    where.skill = filters.skill;
   }
 
   if (filters.difficulty && filters.difficulty !== "ALL") {
