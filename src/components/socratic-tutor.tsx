@@ -111,7 +111,7 @@ export function SocraticTutor({ questionId }: { questionId: string }) {
       </div>
 
       <p className="muted text-xs" style={{ margin: "0 0 0.6rem" }}>
-        I'll nudge you toward the answer — I won't give it away. Tell me what you're thinking.
+        I&apos;ll nudge you toward the answer — I won&apos;t give it away. Tell me what you&apos;re thinking.
       </p>
 
       <div
