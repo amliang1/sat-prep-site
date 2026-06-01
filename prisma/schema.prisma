@@ -8,51 +8,58 @@ datasource db {
 }
 
 model User {
-  id               String            @id @default(cuid())
-  email            String            @unique
-  name             String
-  passwordHash     String
-  role             String            @default("STUDENT")
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  sessions         PracticeSession[]
-  answers          PracticeAnswer[]
-  analyticsEvents  AnalyticsEvent[]
-  tutorClassrooms  Classroom[]       @relation("TutorClassrooms")
-  memberships      ClassroomMember[]
-  targetScore      Int?
-  testDate         DateTime?
-  currentStreak    Int               @default(0)
-  lastStudyDate    DateTime?
-  srsItems         SrsItem[]
-  assignments      Assignment[]
-  mockExamAttempts MockExamAttempt[]
+  id                     String                  @id @default(cuid())
+  email                  String                  @unique
+  name                   String
+  passwordHash           String
+  role                   String                  @default("STUDENT")
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  sessions               PracticeSession[]
+  answers                PracticeAnswer[]
+  analyticsEvents        AnalyticsEvent[]
+  tutorClassrooms        Classroom[]             @relation("TutorClassrooms")
+  memberships            ClassroomMember[]
+  targetScore            Int?
+  testDate               DateTime?
+  currentStreak          Int                     @default(0)
+  lastStudyDate          DateTime?
+  srsItems               SrsItem[]
+  assignments            Assignment[]
+  mockExamAttempts       MockExamAttempt[]
+  adaptiveAttempts       AdaptiveAttempt[]
+  socraticConversations  SocraticConversation[]
 }
 
 model Question {
-  id                String           @id @default(cuid())
-  externalId        String?          @unique
-  source            String
-  sourceUrl         String?
-  testName          String?
-  section           String
-  domain            String
-  skill             String
-  difficulty        String
-  questionType      String           @default("MULTIPLE_CHOICE")
-  prompt            String
-  passage           String?
-  choices           QuestionChoice[]
-  explanation       String?
-  correctChoiceId   String?
-  correctTextAnswer String?
-  tags              QuestionTag[]
-  answers           PracticeAnswer[]
-  analyticsEvents   AnalyticsEvent[]
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  aiExplanation     String?
-  srsItems          SrsItem[]
+  id                    String                 @id @default(cuid())
+  externalId            String?                @unique
+  source                String
+  sourceUrl             String?
+  testName              String?
+  section               String
+  domain                String
+  skill                 String
+  difficulty            String
+  questionType          String                 @default("MULTIPLE_CHOICE")
+  prompt                String
+  passage               String?
+  choices               QuestionChoice[]
+  explanation           String?
+  correctChoiceId       String?
+  correctTextAnswer     String?
+  tags                  QuestionTag[]
+  answers               PracticeAnswer[]
+  analyticsEvents       AnalyticsEvent[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  aiExplanation         String?
+  srsItems              SrsItem[]
+  // IRT calibration (2PL). a = discrimination, b = difficulty on logit scale.
+  irtDifficulty         Float?
+  irtDiscrimination     Float?
+  adaptiveResponses     AdaptiveResponse[]
+  socraticConversations SocraticConversation[]
 }
 
 model QuestionChoice {
@@ -188,4 +195,69 @@ model MockExamAttempt {
   score       Int?
   exam        MockExam  @relation(fields: [examId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Computerized Adaptive Test (CAT) attempt — uses 2PL IRT to pick items.
+model AdaptiveAttempt {
+  id            String             @id @default(cuid())
+  userId        String
+  section       String
+  startedAt     DateTime           @default(now())
+  completedAt   DateTime?
+  // Live latent ability estimate (theta) on the logit scale, typically [-3, 3].
+  theta         Float              @default(0)
+  // Standard error of the theta estimate.
+  thetaSe       Float              @default(1)
+  // Scaled SAT-style score (200–800) finalized when attempt completes.
+  scaledScore   Int?
+  // Stopping rule config
+  maxQuestions  Int                @default(20)
+  seTarget      Float              @default(0.3)
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  responses     AdaptiveResponse[]
+}
+
+model AdaptiveResponse {
+  id           String          @id @default(cuid())
+  attemptId    String
+  questionId   String
+  position     Int
+  isCorrect    Boolean
+  // Snapshot of the running theta estimate AFTER this response.
+  thetaAfter   Float
+  thetaSeAfter Float
+  responseMs   Int?
+  answeredAt   DateTime        @default(now())
+  attempt      AdaptiveAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question     Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId, position])
+}
+
+// Socratic tutor conversation — one per (user, question).
+model SocraticConversation {
+  id         String            @id @default(cuid())
+  userId     String
+  questionId String
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  // Set when the student finally solves it or asks to reveal.
+  resolvedAt DateTime?
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  messages   SocraticMessage[]
+
+  @@unique([userId, questionId])
+}
+
+model SocraticMessage {
+  id             String               @id @default(cuid())
+  conversationId String
+  role           String
+  content        String
+  createdAt      DateTime             @default(now())
+  conversation   SocraticConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
 }

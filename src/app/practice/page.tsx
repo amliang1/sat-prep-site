@@ -4,7 +4,7 @@ import { getQuestionFilters } from "@/lib/questions";
 import { prisma } from "@/lib/prisma";
 import { getDueSrsItems } from "@/lib/srs";
 import { getDashboardAnalytics } from "@/lib/dashboard";
-import { FileText, Library, ArrowRight, Baseline, Triangle, Circle, Check } from "lucide-react";
+import { FileText, Library, ArrowRight, Baseline, Triangle, Circle, Check, Zap } from "lucide-react";
 
 function formatSectionLabel(section: string | null) {
   if (section === "READING_WRITING") return "Reading & Writing";
@@ -42,10 +42,16 @@ export default async function PracticePage() {
             Build a focused set, or take a full Bluebook-style mock exam.
           </p>
         </div>
-        <Link href="/exam/new" className="button" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
-          <FileText size={18} />
-          Mock exam
-        </Link>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <Link href="/cat/new" className="button secondary" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+            <Zap size={18} />
+            Adaptive diagnostic
+          </Link>
+          <Link href="/exam/new" className="button" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+            <FileText size={18} />
+            Mock exam
+          </Link>
+        </div>
       </div>
 
         <div className="panel review-bin-cta" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>

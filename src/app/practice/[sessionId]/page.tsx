@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { FormattedMathText } from "@/components/formatted-math-text";
 import { PracticeQuestionForm } from "@/components/practice-question-form";
+import { SocraticTutor } from "@/components/socratic-tutor";
 import { requireUser } from "@/lib/auth";
 import { formatSection } from "@/lib/utils";
 import { prisma } from "@/lib/prisma";
@@ -151,6 +152,7 @@ export default async function PracticeSessionPage({ params, searchParams }: Prac
                 choices={nextQuestion.choices}
                 questionType={nextQuestion.questionType}
               />
+              <SocraticTutor questionId={nextQuestion.id} />
             </div>
           </div>
         ) : (
@@ -162,6 +164,7 @@ export default async function PracticeSessionPage({ params, searchParams }: Prac
               choices={nextQuestion.choices}
               questionType={nextQuestion.questionType}
             />
+            <SocraticTutor questionId={nextQuestion.id} />
           </>
         )}
       </div>
