@@ -29,6 +29,7 @@ model User {
   mockExamAttempts       MockExamAttempt[]
   adaptiveAttempts       AdaptiveAttempt[]
   socraticConversations  SocraticConversation[]
+  skillMastery           SkillMastery[]
 }
 
 model Question {
@@ -260,4 +261,23 @@ model SocraticMessage {
   conversation   SocraticConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
+}
+
+// BKT-style mastery posterior, one row per (user, canonical skill id).
+model SkillMastery {
+  id           String   @id @default(cuid())
+  userId       String
+  skillId      String
+  // Free-text source skill (most-recent) so we can render labels for
+  // skills outside the canonical graph.
+  rawSkill     String
+  // P(mastered) ∈ [0, 1]
+  mastery      Float    @default(0.25)
+  attempts     Int      @default(0)
+  correct      Int      @default(0)
+  lastAnswered DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillId])
+  @@index([userId, mastery])
 }

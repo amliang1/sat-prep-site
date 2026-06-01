@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { trackEvent } from "@/lib/analytics";
 import { prisma } from "@/lib/prisma";
 import { addToSrs, advanceSrs } from "@/lib/srs";
+import { recordSkillObservation } from "@/lib/mastery";
 
 type AnswerRouteProps = {
   params: Promise<{ sessionId: string }>;
@@ -104,6 +105,9 @@ export async function POST(request: Request, { params }: AnswerRouteProps) {
   } else {
     await advanceSrs(user.id, question.id);
   }
+
+  // Update BKT mastery for this skill
+  await recordSkillObservation(user.id, question.skill, isCorrect);
 
   // Update study streak
   const today = new Date();

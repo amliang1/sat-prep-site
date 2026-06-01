@@ -5,6 +5,9 @@ import { getDueSrsItems } from "@/lib/srs";
 import { ScoreChart } from "@/components/score-chart";
 import Link from "next/link";
 import { formatSection } from "@/lib/utils";
+import { getMasterySnapshot } from "@/lib/mastery";
+import { buildScoreForecast } from "@/lib/score-predictor";
+import { MasteryGraph } from "@/components/mastery-graph";
 
 function daysUntil(date: Date | null): number | null {
   if (!date) return null;
@@ -34,7 +37,7 @@ function clamp(value: number, min: number, max: number) {
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  const [analytics, fullUser, dueSrsItems, examAttempts] = await Promise.all([
+  const [analytics, fullUser, dueSrsItems, examAttempts, masterySnapshot, forecast] = await Promise.all([
     getDashboardAnalytics(user.id, user.role),
     prisma.user.findUnique({
       where: { id: user.id },
@@ -46,7 +49,9 @@ export default async function DashboardPage() {
       orderBy: { completedAt: "asc" },
       take: 12,
       select: { score: true, completedAt: true, id: true }
-    })
+    }),
+    getMasterySnapshot(user.id),
+    buildScoreForecast(user.id)
   ]);
 
   const testDaysRemaining = daysUntil(fullUser?.testDate ?? null);
@@ -123,6 +128,83 @@ export default async function DashboardPage() {
           </form>
         </section>
       )}
+
+      {/* ── Calibrated score forecast ── */}
+      <section className="panel">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem", marginBottom: "0.75rem" }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: "1rem" }}>Calibrated score forecast</h2>
+            <p className="muted text-xs" style={{ margin: "0.25rem 0 0" }}>
+              IRT 2PL fit on your last {forecast.sections[0]?.attemptsUsed + (forecast.sections[1]?.attemptsUsed ?? 0)} answers, blended with your most recent mock exam. 80% confidence intervals.
+            </p>
+          </div>
+          {forecast.daysToTest != null && forecast.total.projected != null ? (
+            <span className="badge" style={{ fontSize: "0.78rem" }}>
+              On pace for {forecast.total.projected} ± {forecast.total.ci} by your test date
+            </span>
+          ) : null}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem" }}>
+          <div className="stat">
+            <div className="stat-label">Current total</div>
+            <div style={{ fontSize: "1.7rem", fontWeight: 800 }}>{forecast.total.current}</div>
+            <div className="muted text-xs">± {forecast.total.ci} (80% CI)</div>
+          </div>
+          {forecast.sections.map((sec) => (
+            <div className="stat" key={sec.section}>
+              <div className="stat-label">{formatSection(sec.section)}</div>
+              <div style={{ fontSize: "1.45rem", fontWeight: 800 }}>{sec.current}</div>
+              <div className="muted text-xs">
+                ± {sec.ci}
+                {sec.weeklyGain !== 0 ? ` · ${sec.weeklyGain > 0 ? "+" : ""}${Math.round(sec.weeklyGain)}/wk trend` : ""}
+              </div>
+            </div>
+          ))}
+          {forecast.daysToTest != null ? (
+            <div className="stat">
+              <div className="stat-label">Projected total</div>
+              <div style={{ fontSize: "1.7rem", fontWeight: 800, color: "var(--accent)" }}>
+                {forecast.total.projected ?? "—"}
+              </div>
+              <div className="muted text-xs">{forecast.daysToTest}d to test</div>
+            </div>
+          ) : null}
+        </div>
+
+        {forecast.recommendedGains.length > 0 && (
+          <div style={{ marginTop: "1rem" }}>
+            <div className="muted text-xs" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>
+              Realistic gains
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "0.5rem" }}>
+              {forecast.recommendedGains.map((g) => (
+                <form key={g.skill} action="/api/practice/targeted-session" method="post" className="stat" style={{ display: "block" }}>
+                  <input type="hidden" name="skill" value={g.skill} />
+                  <input type="hidden" name="count" value="8" />
+                  <input type="hidden" name="label" value={`Gain drill: ${g.skill}`} />
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <strong style={{ fontSize: "0.85rem" }}>{g.skill}</strong>
+                    <span style={{ fontWeight: 800, color: "var(--green)" }}>+{g.scorePoints}</span>
+                  </div>
+                  <div className="muted text-xs" style={{ marginTop: "0.2rem" }}>
+                    Mastery {Math.round(g.currentMastery * 100)}% · {formatSection(g.section)}
+                  </div>
+                  <button className="button secondary" type="submit" style={{ marginTop: "0.55rem", fontSize: "0.75rem", padding: "0.4rem 0.7rem" }}>
+                    Drill now
+                  </button>
+                </form>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!forecast.sections[0].hasData && !forecast.sections[1].hasData && (
+          <p className="muted text-sm" style={{ marginTop: "0.75rem" }}>
+            Answer a few questions in each section to unlock a calibrated forecast.
+          </p>
+        )}
+      </section>
 
       {/* ── Score trajectory + set goals ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "1.25rem", alignItems: "start" }}>
@@ -231,6 +313,15 @@ export default async function DashboardPage() {
             )}
           </div>
         </div>
+      </section>
+
+      {/* ── BKT mastery graph ── */}
+      <section className="panel">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+          <h2 style={{ margin: 0, fontSize: "1rem" }}>Skill mastery graph</h2>
+          <span className="muted text-xs">BKT posterior · prerequisites</span>
+        </div>
+        <MasteryGraph snapshot={masterySnapshot} />
       </section>
 
       {/* ── Skill heatmap ── */}

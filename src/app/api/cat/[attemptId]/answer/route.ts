@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { recomputeTheta } from "@/lib/cat";
 import { thetaToScaledScore } from "@/lib/irt";
 import { addToSrs, advanceSrs } from "@/lib/srs";
+import { recordSkillObservation } from "@/lib/mastery";
 
 type RouteProps = {
   params: Promise<{ attemptId: string }>;
@@ -75,6 +76,8 @@ export async function POST(request: Request, { params }: RouteProps) {
   } else {
     await addToSrs(user.id, question.id);
   }
+
+  await recordSkillObservation(user.id, question.skill, isCorrect);
 
   await trackEvent({
     type: "QUESTION_ANSWERED",
